@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>iOS 17 Clone</title>
+
+<style>
+* {
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:-apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+}
+
+body {
+  background:black;
+  overflow:hidden;
+}
+
+/* LOCK SCREEN */
+#lock {
+  position:absolute;
+  width:100%;
+  height:100vh;
+  background:url('https://picsum.photos/500/1000') center/cover;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-items:center;
+  color:white;
+  transition:0.6s cubic-bezier(.25,1,.5,1);
+}
+
+#time {
+  font-size:72px;
+  font-weight:200;
+}
+
+#date {
+  font-size:18px;
+  opacity:0.8;
+}
+
+#unlockHint {
+  position:absolute;
+  bottom:40px;
+  font-size:14px;
+  opacity:0.7;
+}
+
+/* DYNAMIC ISLAND */
+#island {
+  position:absolute;
+  top:12px;
+  left:50%;
+  transform:translateX(-50%);
+  width:120px;
+  height:30px;
+  background:black;
+  border-radius:20px;
+  transition:all .4s cubic-bezier(.25,1,.5,1);
+}
+
+#island.active {
+  width:260px;
+  height:70px;
+}
+
+/* HOME */
+#home {
+  display:none;
+  height:100vh;
+  background:url('https://picsum.photos/500/1000?blur=3') center/cover;
+  color:white;
+}
+
+/* STATUS BAR */
+.status {
+  display:flex;
+  justify-content:space-between;
+  padding:12px;
+  font-size:14px;
+}
+
+/* PAGES */
+#pages {
+  display:flex;
+  width:200%;
+  height:85%;
+  transition:0.4s cubic-bezier(.25,1,.5,1);
+}
+
+.page {
+  width:100%;
+  padding:20px;
+}
+
+/* WIDGET PAGE */
+.widget {
+  background:rgba(255,255,255,0.15);
+  backdrop-filter:blur(25px);
+  border-radius:20px;
+  padding:20px;
+  margin-bottom:15px;
+}
+
+/* APP GRID */
+.grid {
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:22px;
+  margin-top:20px;
+}
+
+.app {
+  text-align:center;
+}
+
+.icon {
+  width:64px;
+  height:64px;
+  border-radius:18px;
+  background:rgba(255,255,255,0.2);
+  backdrop-filter:blur(20px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:28px;
+  margin:auto;
+  transition:0.2s;
+}
+
+.icon:active {
+  transform:scale(0.75);
+}
+
+.label {
+  font-size:12px;
+  margin-top:6px;
+}
+
+/* DOCK */
+.dock {
+  position:absolute;
+  bottom:15px;
+  left:5%;
+  width:90%;
+  padding:12px;
+  border-radius:30px;
+  display:flex;
+  justify-content:space-around;
+  background:rgba(255,255,255,0.2);
+  backdrop-filter:blur(30px);
+}
+
+/* APP OPEN */
+#app {
+  position:absolute;
+  width:100%;
+  height:100%;
+  background:white;
+  transform:scale(0.92);
+  opacity:0;
+  transition:0.35s cubic-bezier(.25,1,.5,1);
+  display:flex;
+  flex-direction:column;
+}
+
+#app.show {
+  transform:scale(1);
+  opacity:1;
+}
+
+.header {
+  padding:15px;
+  background:#f2f2f2;
+}
+
+.close {
+  float:right;
+  cursor:pointer;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOCK -->
+<div id="lock">
+  <div id="time"></div>
+  <div id="date"></div>
+  <div id="unlockHint">Swipe up to unlock</div>
+</div>
+
+<!-- HOME -->
+<div id="home">
+
+<div id="island"></div>
+
+<div class="status">
+  <span id="statusTime"></span>
+  <span>📶 🔋</span>
+</div>
+
+<div id="pages">
+  
+  <!-- WIDGET PAGE -->
+  <div class="page">
+    <div class="widget">📅 Calendar</div>
+    <div class="widget">🌤 Weather</div>
+  </div>
+
+  <!-- HOME PAGE -->
+  <div class="page">
+    <div class="grid">
+      
+      <div class="app" onclick="openApp('Phone')">
+        <div class="icon">📞</div>
+        <div class="label">Phone</div>
+      </div>
+
+      <div class="app" onclick="openApp('Messages')">
+        <div class="icon">💬</div>
+        <div class="label">Messages</div>
+      </div>
+
+      <div class="app" onclick="openApp('Safari')">
+        <div class="icon">🌐</div>
+        <div class="label">Safari</div>
+      </div>
+
+      <div class="app" onclick="openApp('Music')">
+        <div class="icon">🎵</div>
+        <div class="label">Music</div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+
+<!-- DOCK -->
+<div class="dock">
+  <div class="icon" onclick="openApp('Phone')">📞</div>
+  <div class="icon" onclick="openApp('Messages')">💬</div>
+  <div class="icon" onclick="openApp('Safari')">🌐</div>
+</div>
+
+</div>
+
+<!-- APP SCREEN -->
+<div id="app">
+  <div class="header">
+    <span id="appTitle"></span>
+    <span class="close" onclick="closeApp()">✖</span>
+  </div>
+  <div style="padding:20px;">App content</div>
+</div>
+
+<script>
+/* TIME */
+function updateTime(){
+  let d=new Date();
+  let t=d.getHours()+":"+d.getMinutes().toString().padStart(2,'0');
+  time.innerText=t;
+  statusTime.innerText=t;
+  date.innerText=d.toDateString();
+}
+setInterval(updateTime,1000);
+updateTime();
+
+/* UNLOCK */
+let startY=0;
+document.addEventListener("touchstart",e=>{
+  startY=e.touches[0].clientY;
+});
+document.addEventListener("touchend",e=>{
+  let endY=e.changedTouches[0].clientY;
+  if(startY-endY>50){
+    lock.style.transform="translateY(-100%)";
+    setTimeout(()=>{
+      lock.style.display="none";
+      home.style.display="block";
+    },500);
+  }
+});
+
+/* PAGE SWIPE */
+let startX=0;
+document.addEventListener("touchstart",e=>{
+  startX=e.touches[0].clientX;
+});
+document.addEventListener("touchend",e=>{
+  let dx=e.changedTouches[0].clientX-startX;
+  if(dx<-50) pages.style.transform="translateX(-100%)";
+  if(dx>50) pages.style.transform="translateX(0%)";
+});
+
+/* APP */
+function openApp(name){
+  appTitle.innerText=name;
+  app.classList.add("show");
+  island.classList.add("active");
+}
+function closeApp(){
+  app.classList.remove("show");
+  island.classList.remove("active");
+}
+</script>
+
+</body>
+</html>
